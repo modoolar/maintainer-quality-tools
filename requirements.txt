@@ -5,7 +5,7 @@ pyyaml
 coveralls
 websocket-client
 unittest2
-
+six
 configparser
 
 # transifex requirements
