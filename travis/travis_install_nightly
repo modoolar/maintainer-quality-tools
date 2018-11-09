@@ -61,6 +61,7 @@ if [ "x${ODOO_BRANCH}" == "x"  ] ; then
     ODOO_BRANCH=${VERSION}
 fi
 
+# Odoo Community Edition
 : ${ODOO_REPO:="odoo/odoo"}  # default value, if not set
 IFS="/" read -a REPO <<< "${ODOO_REPO}"
 export REMOTE="${REPO[0],,}"
@@ -91,6 +92,44 @@ else
     git --work-tree=${ODOO_PATH} --git-dir=${ODOO_PATH}/.git fetch --depth=1 ${REMOTE} $PULL_REQUEST/head:${BRANCH}-${REMOTE} \
         && git --work-tree=${ODOO_PATH} --git-dir=${ODOO_PATH}/.git config --local --bool core.bare false \
         && git --work-tree=${ODOO_PATH} --git-dir=${ODOO_PATH}/.git checkout ${BRANCH}-${REMOTE}
+fi
+
+# Odoo Enterprise Edition
+# For backward compatibility, take version from parameter if it's not globally set
+if [ "x${ENTERPRISE}" != "x" ] ; then
+    : ${ENT_ODOO_REPO:="odoo/enterprise"}  # default value, if not set
+    IFS="/" read -a ENT_REPO <<< "${ENT_ODOO_REPO}"
+    export ENT_REMOTE="${ENT_REPO[0],,}"
+    export ENT_REPO_NAME="${ENT_REPO[1]}"
+
+    export ENT_ODOO_PATH=${HOME}/$ENT_REPO_NAME-$ODOO_BRANCH
+    if [ -d "${REPO_CACHED}/enterprise" ]; then
+        echo "Using Odoo from cache ${REPO_CACHED}"
+        ln -sf ${REPO_CACHED}/enterprise ${ENT_ODOO_PATH}
+    else
+        echo "Downloading Enterprise"
+        if [ "x${ENT_ODOO_TOKEN}" != "x" ] ; then
+            git clone --depth=50 https://${ENT_ODOO_TOKEN}@github.com/$ENT_REMOTE/$ENT_REPO_NAME.git -b $BRANCH ${ENT_ODOO_PATH}
+            git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git remote rename origin $ENT_REMOTE
+        fi
+
+        if [[ "x${ENT_ODOO_TOKEN}" == "x" && "x${ENT_ODOO_USER}" != "x" && "x${ENT_ODOO_PWD}" != "x" ]] ; then
+            git clone --depth=50 https://${ENT_ODOO_USER}:${ENT_ODOO_PWD}@github.com/$ENT_REMOTE/$ENT_REPO_NAME.git -b $BRANCH ${ENT_ODOO_PATH}
+            git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git remote rename origin $ENT_REMOTE
+        fi
+    fi
+
+    if [ "x${PULL_REQUEST}" == "x" ] ; then
+        git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git fetch --depth=1 ${ENT_REMOTE} ${BRANCH} \
+            && git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git config --local --bool core.bare false \
+            && git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git checkout -b ${BRANCH}-${ENT_REMOTE} -qf ${ENT_REMOTE}/${BRANCH}
+    else
+        # Is a pull request
+        git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git reset --hard
+        git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git fetch --depth=1 ${REMOTE} $PULL_REQUEST/head:${BRANCH}-${REMOTE} \
+            && git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git config --local --bool core.bare false \
+            && git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git checkout ${BRANCH}-${ENT_REMOTE}
+    fi
 fi
 
 # Workaround to force using system site packages (see https://github.com/Shippable/support/issues/241#issuecomment-57947925)
