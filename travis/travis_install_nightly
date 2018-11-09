@@ -74,9 +74,21 @@ if [[ $BRANCH == *"/"*  ]]; then
     export BRANCH=${BRANCH/\//-}
 fi
 export ODOO_PATH=${HOME}/$REPO_NAME-$ODOO_BRANCH
-if [ -d "${REPO_CACHED}/odoo" ]; then
+if [ "x${REPO_CACHED}" != "x" ]; then
     echo "Using Odoo from cache ${REPO_CACHED}"
+    mkdir -p ${REPO_CACHED}/odoo
     ln -sf ${REPO_CACHED}/odoo ${ODOO_PATH}
+
+    # When using cache clone if repo does not exist or pull if repo exists
+    if [[ -d $ODOO_PATH/.git ]]; then
+        echo "Git already initialized on ${ODOO_PATH}, polling changes..."
+        git -C $ODOO_PATH pull
+    else
+        echo "First time using cache. Cloning repo..."
+        git clone --depth=50 https://github.com/$REMOTE/$REPO_NAME.git -b $BRANCH ${ODOO_PATH}
+        git --work-tree=${ODOO_PATH} --git-dir=${ODOO_PATH}/.git remote rename origin $REMOTE
+    fi
+
 else
     echo "Downloading Odoo"
     git clone --depth=50 https://github.com/$REMOTE/$REPO_NAME.git -b $BRANCH ${ODOO_PATH}
@@ -103,9 +115,28 @@ if [ "x${ENTERPRISE}" != "x" ] ; then
     export ENT_REPO_NAME="${ENT_REPO[1]}"
 
     export ENT_ODOO_PATH=${HOME}/$ENT_REPO_NAME-$ODOO_BRANCH
-    if [ -d "${REPO_CACHED}/enterprise" ]; then
-        echo "Using Odoo from cache ${REPO_CACHED}"
+    if [ "x${REPO_CACHED}" != "x" ]; then
+        echo "Using Odoo Enterprise from cache ${REPO_CACHED}"
+        mkdir -p ${REPO_CACHED}/enterprise
         ln -sf ${REPO_CACHED}/enterprise ${ENT_ODOO_PATH}
+
+        # When using cache clone if repo does not exist or pull if repo exists
+        if [[ -d ENT_ODOO_PATH/.git ]]; then
+            echo "Git already initialized on ${ENT_ODOO_PATH}, polling changes..."
+            git -C ENT_ODOO_PATH pull
+        else
+            echo "First time using cache. Cloning repo..."
+            # Sorry for code duplication
+            if [ "x${ENT_ODOO_TOKEN}" != "x" ] ; then
+                git clone --depth=50 https://${ENT_ODOO_TOKEN}@github.com/$ENT_REMOTE/$ENT_REPO_NAME.git -b $BRANCH ${ENT_ODOO_PATH}
+                git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git remote rename origin $ENT_REMOTE
+            fi
+
+            if [[ "x${ENT_ODOO_TOKEN}" == "x" && "x${ENT_ODOO_USER}" != "x" && "x${ENT_ODOO_PWD}" != "x" ]] ; then
+                git clone --depth=50 https://${ENT_ODOO_USER}:${ENT_ODOO_PWD}@github.com/$ENT_REMOTE/$ENT_REPO_NAME.git -b $BRANCH ${ENT_ODOO_PATH}
+                git --work-tree=${ENT_ODOO_PATH} --git-dir=${ENT_ODOO_PATH}/.git remote rename origin $ENT_REMOTE
+            fi
+        fi
     else
         echo "Downloading Enterprise"
         if [ "x${ENT_ODOO_TOKEN}" != "x" ] ; then
