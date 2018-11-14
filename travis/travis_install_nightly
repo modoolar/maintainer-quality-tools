@@ -124,7 +124,7 @@ if [ "x${ENTERPRISE}" != "x" ] ; then
         # When using cache clone if repo does not exist or pull if repo exists
         if [[ -d $ENT_ODOO_PATH/.git ]]; then
             echo "Git already initialized on ${ENT_ODOO_PATH}, polling changes..."
-            git -C ENT_ODOO_PATH pull
+            git -C $ENT_ODOO_PATH pull
         else
             echo "First time using cache. Cloning repo..."
             # Sorry for code duplication
