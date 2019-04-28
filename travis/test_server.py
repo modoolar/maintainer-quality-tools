@@ -133,7 +133,9 @@ def get_addons_path(travis_dependencies_dir, travis_build_dir,
     :param server_path: Server path
     :return: Addons path
     """
-
+    ADDONS_PATH = os.environ.get('ADDONS_PATH', False)
+    if ADDONS_PATH:
+        return ADDONS_PATH
     addons_path_list = []
     if enterprise_path:
         addons_path_list.append(enterprise_path)
