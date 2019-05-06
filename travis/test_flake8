@@ -9,7 +9,7 @@ from getaddons import get_modules
 root_dir = os.path.dirname(os.path.abspath(__file__))
 flake8_config_dir = os.path.join(root_dir, 'cfg')
 folders = (os.environ.get("INCLUDE_LINT", "").split() or
-           get_modules(os.path.abspath('.')))
+           get_modules(os.path.abspath('.'), 4, True))
 
 exclude = os.environ.get('EXCLUDE', '').split(',')
 folders = [folder for folder in folders if folder not in exclude]

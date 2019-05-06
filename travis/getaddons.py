@@ -34,8 +34,11 @@ def is_module(path):
         return False
 
 
-def get_modules(path, depth=1):
+def get_modules(path, depth=4, abs=False):
     """ Return modules of path repo (used in test_server.py)"""
+    if abs:
+        return sorted(list(map(lambda a: a['abs_path'],
+            get_modules_info(path, depth).values())))
     return sorted(list(get_modules_info(path, depth).keys()))
 
 
@@ -47,7 +50,9 @@ def get_modules_info(path, depth=1):
 
     modules = {}
     if os.path.isdir(path) and depth > 0:
-        for module in os.listdir(path):
+        visible = list(
+            filter(lambda a: not a.startswith('.'), os.listdir(path)))
+        for module in visible:
             manifest_path = is_module(os.path.join(path, module))
             if manifest_path:
                 manifest = ast.literal_eval(open(manifest_path).read())
@@ -56,10 +61,11 @@ def get_modules_info(path, depth=1):
                         'application': manifest.get('application'),
                         'depends': manifest.get('depends') or [],
                         'auto_install': manifest.get('auto_install'),
+                        'abs_path': os.path.join(path, module)
                     }
             else:
                 deeper_modules = get_modules_info(
-                    os.path.join(path, module), depth-1)
+                    os.path.join(path, module), depth - 1)
                 modules.update(deeper_modules)
     return modules
 
@@ -81,7 +87,7 @@ def get_addons(path, depth=1):
                      for x in sorted(os.listdir(path))
                      if os.path.isdir(os.path.join(path, x))]
         for new_path in new_paths:
-            res.extend(get_addons(new_path, depth-1))
+            res.extend(get_addons(new_path, depth - 1))
     return res
 
 

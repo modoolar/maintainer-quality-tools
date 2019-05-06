@@ -8,6 +8,8 @@ import subprocess
 import sys
 from travis_helpers import success_msg, fail_msg
 
+TRAVIS_DIR = "/opt/odoo/maintainer-quality-tools/travis/"
+
 
 def main(test_list):
     """
@@ -23,7 +25,7 @@ def main(test_list):
     for test in test_list:
         # keep backward compatibility with version as an argument
         print("======== Testing %s ========" % test[0])
-        test_w_args = test + args
+        test_w_args = ["python", TRAVIS_DIR + test[0]] + args
         test_file = test_w_args[0]
         if test_file.endswith(".py"):
             test_lib = test_file[:-3]
@@ -37,13 +39,13 @@ def main(test_list):
         results.append(res)
 
     print()
-    print("+" + "="*39)
+    print("+" + "=" * 39)
     print("|  Tests summary:")
-    print("|" + "-"*39)
+    print("|" + "-" * 39)
     for test, error in zip(test_list, results):
         outcome = fail_msg if error else success_msg
         print("| {0:<28}{1}".format(test[0], outcome))
-    print("+" + "="*39)
+    print("+" + "=" * 39)
     return max(results)
 
 
@@ -61,16 +63,16 @@ if __name__ == '__main__':
     # is MAKEPOT=1 and TESTS=1, test_server.py will run
     # makepot using the test database, which will be faster
     must_run_makepot = (
-        (os.environ.get('MAKEPOT') == '1' or
-         os.environ.get('TRANSIFEX') == '1') and
-        not tests_enabled and
-        is_oca_project and
-        os.environ.get('TRAVIS_BRANCH')
-        in ('8.0', '9.0', '10.0', '11.0', '12.0') and
-        not is_pull_request and
-        os.environ.get('GITHUB_USER') and
-        os.environ.get('GITHUB_EMAIL') and
-        os.environ.get('GITHUB_TOKEN')
+            (os.environ.get('MAKEPOT') == '1' or
+             os.environ.get('TRANSIFEX') == '1') and
+            not tests_enabled and
+            is_oca_project and
+            os.environ.get('TRAVIS_BRANCH')
+            in ('8.0', '9.0', '10.0', '11.0', '12.0') and
+            not is_pull_request and
+            os.environ.get('GITHUB_USER') and
+            os.environ.get('GITHUB_EMAIL') and
+            os.environ.get('GITHUB_TOKEN')
     )
 
     # Test list. Each test is a list with command + arguments.
