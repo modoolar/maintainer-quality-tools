@@ -3,16 +3,22 @@ import os
 import subprocess
 import sys
 
-from getaddons import get_modules
-
+from getaddons import get_modules_info
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 flake8_config_dir = os.path.join(root_dir, 'cfg')
-folders = (os.environ.get("INCLUDE_LINT", "").split() or
-           get_modules(os.path.abspath('.'), 4, True))
+if os.environ.get("INCLUDE_LINT", False):
+    folders = os.environ.get("INCLUDE_LINT", "").split(',')
+else:
+    modules = get_modules_info(os.path.abspath('.'), 4).values()
+    if os.environ.get("TEST_AUTHOR", False):
+        authors = os.environ.get("TEST_AUTHOR").split(';')
+        modules = filter(lambda m: any(a in m['author']for a in authors), modules)
+    module_paths = map(lambda m: m['abs_path'], modules)
+    folders = sorted(list(module_paths))
 
 exclude = os.environ.get('EXCLUDE', '').split(',')
-folders = [folder for folder in folders if folder not in exclude]
+folders = [folder for folder in folders if folder.split("/")[-1] not in exclude]
 
 status = 0
 

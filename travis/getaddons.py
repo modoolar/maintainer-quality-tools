@@ -34,11 +34,8 @@ def is_module(path):
         return False
 
 
-def get_modules(path, depth=4, abs=False):
+def get_modules(path, depth=4):
     """ Return modules of path repo (used in test_server.py)"""
-    if abs:
-        return sorted(list(map(lambda a: a['abs_path'],
-            get_modules_info(path, depth).values())))
     return sorted(list(get_modules_info(path, depth).keys()))
 
 
@@ -59,6 +56,7 @@ def get_modules_info(path, depth=1):
                 if manifest.get('installable', True):
                     modules[module] = {
                         'application': manifest.get('application'),
+                        'author': manifest.get('author', ''),
                         'depends': manifest.get('depends') or [],
                         'auto_install': manifest.get('auto_install'),
                         'abs_path': os.path.join(path, module)

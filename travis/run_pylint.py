@@ -13,7 +13,7 @@ import click
 import pylint.lint
 
 import travis_helpers
-from getaddons import get_modules_changed, is_module
+from getaddons import get_modules_changed, is_module, get_modules_info
 from git_run import GitRun
 
 try:
@@ -117,7 +117,13 @@ def get_modules_cmd(dir):
         for path in include_lint.split(' '):
             modules_cmd.extend(['--path', path])
     else:
-        modules_cmd.extend(["--path", dir])
+        modules = get_modules_info(os.path.abspath('.'), 4).values()
+        if os.environ.get("TEST_AUTHOR", False):
+            authors = os.environ.get("TEST_AUTHOR").split(';')
+            modules = filter(lambda m: any(a in m['author'] for a in authors),
+                modules)
+        for m in modules:
+            modules_cmd.extend(["--path", m['abs_path']])
     return modules_cmd
 
 
@@ -162,7 +168,6 @@ def pylint_run(is_pr, version, dir):
     branch_base = get_branch_base()
     extra_params_cmd = get_extra_params(odoo_version)
     extra_info = "extra_params_cmd %s " % extra_params_cmd
-    print(extra_info)
     conf = ["--config-file=%s" % (pylint_rcfile)]
     cmd = conf + modules_cmd + extra_params_cmd
 
@@ -249,7 +254,7 @@ def get_subpaths(paths, depth=1):
                             for item in os.listdir(path)
                             if os.path.isdir(os.path.join(path, item))]
             if new_subpaths:
-                subpaths.extend(get_subpaths(new_subpaths, depth-1))
+                subpaths.extend(get_subpaths(new_subpaths, depth - 1))
         else:
             if is_installable_module(path):
                 subpaths.append(path)
@@ -281,6 +286,7 @@ def run_pylint(paths, cfg, beta_msgs=None, sys_paths=None, extra_params=None):
     if not subpaths:
         return {'error': 0}
     cmd.extend(subpaths)
+    print(cmd)
     if 'do_exit' in inspect.getargspec(pylint.lint.Run.__init__)[0]:
         # pylint has renamed this keyword argument
         pylint_res = pylint.lint.Run(cmd, do_exit=False)
@@ -291,22 +297,22 @@ def run_pylint(paths, cfg, beta_msgs=None, sys_paths=None, extra_params=None):
 
 @click.command()
 @click.option('paths', '--path', envvar='TRAVIS_BUILD_DIR',
-              multiple=True, type=CLICK_DIR, required=True,
-              default=[os.getcwd()],
-              help="Addons paths to check pylint")
+    multiple=True, type=CLICK_DIR, required=True,
+    default=[os.getcwd()],
+    help="Addons paths to check pylint")
 @click.option('--config-file', '-c',
-              type=click.File('r', lazy=True), required=True,
-              help="Pylint config file")
+    type=click.File('r', lazy=True), required=True,
+    help="Pylint config file")
 @click.option('--sys-paths', '-sys-path', envvar='PYTHONPATH',
-              multiple=True, type=CLICK_DIR,
-              help="Additional paths to append in sys path.")
+    multiple=True, type=CLICK_DIR,
+    help="Additional paths to append in sys path.")
 @click.option('--extra-params', '-extra-param', multiple=True,
-              help="Extra pylint params to append "
-                   "in pylint command")
+    help="Extra pylint params to append "
+         "in pylint command")
 @click.option('--msgs-no-count', '-msgs-no-count', multiple=True,
-              help="List of messages that will not add to the failure count.")
+    help="List of messages that will not add to the failure count.")
 def main(paths, config_file, msgs_no_count=None,
-         sys_paths=None, extra_params=None):
+        sys_paths=None, extra_params=None):
     """Script to run pylint command with additional params
     to check fails of odoo modules.
     If expected errors is equal to count fails found then
