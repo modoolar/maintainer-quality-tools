@@ -118,8 +118,8 @@ def get_modules_cmd(dir):
             modules_cmd.extend(['--path', path])
     else:
         modules = get_modules_info(os.path.abspath('.'), 4).values()
-        if os.environ.get("TEST_AUTHOR", False):
-            authors = os.environ.get("TEST_AUTHOR").split(';')
+        if os.environ.get("CQ_AUTHOR", False):
+            authors = os.environ.get("CQ_AUTHOR").split(';')
             modules = filter(lambda m: any(a in m['author'] for a in authors),
                 modules)
         for m in modules:

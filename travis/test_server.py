@@ -30,13 +30,13 @@ def has_test_errors(fname, dbname, odoo_version, check_loaded=True):
     errors_ignore = [
         'Mail delivery failed',
         'failed sending mail',
-        ]
+    ]
     errors_report = [
         lambda x: x['loglevel'] == 'CRITICAL',
         'At least one test failed',
         'no access rules, consider adding one',
         'invalid module names, ignored',
-        ]
+    ]
     # Only check ERROR lines before 7.0
     if odoo_version < '7.0':
         errors_report.append(
@@ -46,17 +46,17 @@ def has_test_errors(fname, dbname, odoo_version, check_loaded=True):
         for i in range(len(pattern_list)):
             if isinstance(pattern_list[i], string_types):
                 regex = re.compile(pattern_list[i])
-                pattern_list[i] = lambda x, regex=regex:\
+                pattern_list[i] = lambda x, regex=regex: \
                     regex.search(x['message'])
             elif hasattr(pattern_list[i], 'match'):
                 regex = pattern_list[i]
-                pattern_list[i] = lambda x, regex=regex:\
+                pattern_list[i] = lambda x, regex=regex: \
                     regex.search(x['message'])
 
     make_pattern_list_callable(errors_ignore)
     make_pattern_list_callable(errors_report)
 
-    print("-"*10)
+    print("-" * 10)
     # Read log file removing ASCII color escapes:
     # http://serverfault.com/questions/71285
     color_regex = re.compile(r'\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]')
@@ -97,7 +97,7 @@ def has_test_errors(fname, dbname, odoo_version, check_loaded=True):
     if errors:
         for e in errors:
             print(e['message'])
-        print("-"*10)
+        print("-" * 10)
     return len(errors)
 
 
@@ -125,7 +125,7 @@ def get_server_path(odoo_full, odoo_version, travis_home):
 
 
 def get_addons_path(travis_dependencies_dir, travis_build_dir,
-                    server_path, enterprise_path=None):
+        server_path, enterprise_path=None):
     """
     Computes addons path
     :param travis_dependencies_dir: Travis dependencies directory
@@ -179,7 +179,13 @@ def get_addons_to_check(travis_build_dir, odoo_include, odoo_exclude):
     if odoo_include:
         addons_list = parse_list(odoo_include)
     else:
-        addons_list = get_modules(travis_build_dir)
+        modules_info = get_modules_info(travis_build_dir, depth=4)
+        if os.environ.get("TEST_AUTHOR", False):
+            authors = os.environ.get("TEST_AUTHOR").split(';')
+            addons_list = [module for module in modules_info if any(
+                a in modules_info[module]['author'] for a in authors)]
+        else:
+            addons_list = get_modules(travis_build_dir)
 
     if odoo_exclude:
         exclude_list = parse_list(odoo_exclude)
@@ -230,8 +236,8 @@ def cmd_strip_secret(cmd):
 
 
 def setup_server(db, odoo_unittest, tested_addons, server_path, script_name,
-                 addons_path, install_options, preinstall_modules=None,
-                 unbuffer=True, server_options=None):
+        addons_path, install_options, preinstall_modules=None,
+        unbuffer=True, server_options=None):
     """
     Setup the base module before running the tests
     if the database template exists, then it will be used.
@@ -290,7 +296,7 @@ def run_from_env_var(env_name_startswith, environ):
 def create_server_conf(data, version):
     """Create (or edit) default configuration file of odoo
     :params data: Dict with all info to save in file"""
-    fname_conf = os.path.expanduser('~/.openerp_serverrc')
+    fname_conf = os.environ.get('ODOO_RC', '/etc/odoo/odoo.conf')
     if not os.path.exists(fname_conf):
         # If not exists the file then is created
         fconf = open(fname_conf, "w")
@@ -363,8 +369,8 @@ def main(argv=None):
     script_name = get_server_script(server_path)
 
     enterprise_path = odoo_enterprise and get_enterprise_path(
-            ent_odoo_full, odoo_branch or odoo_version, travis_home
-        ) or False
+        ent_odoo_full, odoo_branch or odoo_version, travis_home
+    ) or False
 
     addons_path = get_addons_path(
         travis_dependencies_dir, travis_build_dir,
@@ -376,8 +382,8 @@ def main(argv=None):
         'data_dir': data_dir,
     }, odoo_version)
     tested_addons_list = get_addons_to_check(travis_build_dir,
-                                             odoo_include,
-                                             odoo_exclude)
+        odoo_include,
+        odoo_exclude)
     tested_addons = ','.join(tested_addons_list)
 
     print("Working in %s" % travis_build_dir)
@@ -390,14 +396,14 @@ def main(argv=None):
         print("Modules to test: %s" % tested_addons_list)
     # setup the preinstall modules without running the tests
     preinstall_modules = get_test_dependencies(addons_path,
-                                               tested_addons_list)
+        tested_addons_list)
 
     preinstall_modules = list(set(preinstall_modules) - set(get_modules(
         os.environ.get('TRAVIS_BUILD_DIR')))) or ['base']
     print("Modules to preinstall: %s" % preinstall_modules)
     setup_server(dbtemplate, odoo_unittest, tested_addons_list, server_path,
-                 script_name, addons_path, install_options, preinstall_modules,
-                 unbuffer, server_options)
+        script_name, addons_path, install_options, preinstall_modules,
+        unbuffer, server_options)
 
     # Running tests
     cmd_odoo_test = ["coverage", "run",
@@ -415,11 +421,12 @@ def main(argv=None):
     if odoo_unittest:
         to_test_list = tested_addons_list
         cmd_odoo_install = [
-            "%s/%s" % (server_path, script_name),
-            "-d", database,
-            "--stop-after-init",
-            "--log-level=warn",
-        ] + server_options + install_options + ["--init", None]
+                               "%s/%s" % (server_path, script_name),
+                               "-d", database,
+                               "--stop-after-init",
+                               "--log-level=warn",
+                           ] + server_options + install_options + ["--init",
+                                                                   None]
         commands = ((cmd_odoo_install, False),
                     (cmd_odoo_test, True),
                     )
@@ -452,15 +459,15 @@ def main(argv=None):
                 command_call = [item
                                 for item in commands[0][0]
                                 if item not in rm_items] + \
-                    ['--pidfile=/tmp/odoo.pid']
+                               ['--pidfile=/tmp/odoo.pid']
             else:
                 command[-1] = to_test
                 # Run test command; unbuffer keeps output colors
                 command_call = (["unbuffer"] if unbuffer else []) + command
             print(" ".join(cmd_strip_secret(command_call)))
             pipe = subprocess.Popen(command_call,
-                                    stderr=subprocess.STDOUT,
-                                    stdout=subprocess.PIPE)
+                stderr=subprocess.STDOUT,
+                stdout=subprocess.PIPE)
             with open('stdout.log', 'wb') as stdout:
                 for line in iter(pipe.stdout.readline, b''):
                     stdout.write(line)
@@ -501,14 +508,14 @@ def main(argv=None):
         return 1
     # no test error, let's generate .pot and msgmerge all .po files
     must_run_makepot = (
-        os.environ.get('MAKEPOT') == '1' and
-        os.environ.get('TRAVIS_REPO_SLUG', '').startswith('OCA/') and
-        os.environ.get('TRAVIS_BRANCH')
-        in ('8.0', '9.0', '10.0', '11.0', '12.0') and
-        os.environ.get('TRAVIS_PULL_REQUEST') == 'false' and
-        os.environ.get('GITHUB_USER') and
-        os.environ.get('GITHUB_EMAIL') and
-        os.environ.get('GITHUB_TOKEN')
+            os.environ.get('MAKEPOT') == '1' and
+            os.environ.get('TRAVIS_REPO_SLUG', '').startswith('OCA/') and
+            os.environ.get('TRAVIS_BRANCH')
+            in ('8.0', '9.0', '10.0', '11.0', '12.0') and
+            os.environ.get('TRAVIS_PULL_REQUEST') == 'false' and
+            os.environ.get('GITHUB_USER') and
+            os.environ.get('GITHUB_EMAIL') and
+            os.environ.get('GITHUB_TOKEN')
     )
     if must_run_makepot:
         # run makepot using the database we just tested
