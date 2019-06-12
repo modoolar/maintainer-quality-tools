@@ -9,7 +9,8 @@ from codecov import main as codecov_main
 
 if (os.environ.get('TESTS', '1') == '1' and
         os.environ.get('TEST_ENABLE', '1') == '1' and
-        not os.environ.get('LINT_CHECK') == '1'):
+        not os.environ.get('LINT_CHECK') == '1' and
+        not os.environ.get('SKIP_COVERAGE', '0') == '1'):
     coverage_main(["report", "--show-missing"])
     try:
         coveralls_cli.main(argv=None)
