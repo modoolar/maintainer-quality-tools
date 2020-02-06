@@ -8,7 +8,8 @@ import subprocess
 import sys
 from travis_helpers import success_msg, fail_msg
 
-TRAVIS_DIR = "/opt/odoo/maintainer-quality-tools/travis/"
+HOME = os.environ.get("HOME", "~/")
+TRAVIS_DIR = os.path.join(HOME, 'maintainer-quality-tools/travis')
 
 
 def main(test_list):
