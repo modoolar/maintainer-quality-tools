@@ -3,8 +3,14 @@
 import os
 
 from coverage.cmdline import main as coverage_main
-from coveralls import cli as coveralls_cli
-from codecov import main as codecov_main
+try:
+    from coveralls import cli as coveralls_cli
+except ImportError as error:
+    coveralls_cli = None
+try:
+    from codecov import main as codecov_main
+except ImportError as error:
+    codecov_main = None
 
 
 if (os.environ.get('TESTS', '1') == '1' and
@@ -13,10 +19,16 @@ if (os.environ.get('TESTS', '1') == '1' and
         not os.environ.get('SKIP_COVERAGE', '0') == '1'):
     coverage_main(["report", "--show-missing"])
     try:
-        coveralls_cli.main(argv=None)
+        if coveralls_cli:
+            coveralls_cli.main(argv=None)
+        else:
+            print("No coveralls module, skipping.")
     except:
         pass
     try:
-        codecov_main(argv=None)
+        if codecov_main:
+            codecov_main(argv=None)
+        else:
+            print("No coveralls module, skipping.")
     except:
         pass
