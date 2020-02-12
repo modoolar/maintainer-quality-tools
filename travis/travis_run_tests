@@ -42,7 +42,10 @@ def main(test_list):
                 test_w_args,
                 stdout=sys.stdout,
                 stderr=subprocess.STDOUT)
-        results.append(isinstance(res, int) and res or res.returncode)
+        if isinstance(res, int):
+            results.append(res)
+        else:
+            results.append(res.returncode)
 
     print()
     print("+" + "=" * 39)
