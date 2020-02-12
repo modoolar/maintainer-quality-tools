@@ -442,7 +442,7 @@ def main(argv=None):
         else:
             print("\nTesting %s:" % tested_addons_list)
         try:
-            db_odoo_created = subprocess.call(
+            db_odoo_created = subprocess.check_call(
                 ["createdb", "-T", dbtemplate, database])
             copy_attachments(dbtemplate, database, data_dir)
         except subprocess.CalledProcessError:

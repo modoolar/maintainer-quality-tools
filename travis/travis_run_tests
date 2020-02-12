@@ -3,9 +3,11 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
+
 import os
 import subprocess
 import sys
+
 from travis_helpers import success_msg, fail_msg
 
 HOME = os.environ.get("HOME", "~/")
@@ -26,7 +28,7 @@ def main(test_list):
     for test in test_list:
         # keep backward compatibility with version as an argument
         print("\x1b[1;33m======== Testing %s ========\x1b[0m" % test[0])
-        test_w_args = ["python", os.path.join(TRAVIS_DIR, test[0])] + args
+        test_w_args = test + args
         test_file = test_w_args[0]
         if test_file.endswith(".py"):
             test_lib = test_file[:-3]
@@ -40,7 +42,7 @@ def main(test_list):
                 test_w_args,
                 stdout=sys.stdout,
                 stderr=subprocess.STDOUT)
-        results.append(res.returncode)
+        results.append(isinstance(res, int) and res or res.returncode)
 
     print()
     print("+" + "=" * 39)
