@@ -340,8 +340,10 @@ def main(argv=None):
     unbuffer = str2bool(os.environ.get('UNBUFFER', True))
     data_dir = os.path.expanduser(os.environ.get("DATA_DIR", '~/data_dir'))
     test_enable = str2bool(os.environ.get('TEST_ENABLE', True))
-    dbtemplate = os.environ.get('MQT_TEMPLATE_DB', 'openerp_template')
-    database = os.environ.get('MQT_TEST_DB', 'openerp_test')
+    dbtemplate = os.environ.get('MQT_TEMPLATE_DB', 'odoo_template')
+    database = os.environ.get('MQT_TEST_DB', 'odoo_test')
+    drop_db_after_test = str2bool(os.environ.get('DROP_DB_AFTER_TEST', True))
+
     if not odoo_version:
         # For backward compatibility, take version from parameter
         # if it's not globally set
@@ -490,7 +492,7 @@ def main(argv=None):
                 counted_errors += errors
                 all_errors.append(to_test)
                 print(fail_msg, "Found %d lines with errors" % errors)
-        if not instance_alive and odoo_unittest:
+        if not instance_alive and (drop_db_after_test or odoo_unittest):
             # Don't drop the database if will be used later.
             subprocess.call(["dropdb", database])
 
