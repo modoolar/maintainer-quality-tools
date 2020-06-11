@@ -38,7 +38,7 @@ def has_test_errors(fname, dbname, odoo_version, check_loaded=True):
         'invalid module names, ignored',
     ]
     # Only check ERROR lines before 7.0
-    if odoo_version < '7.0':
+    if odoo_version < 7.0:
         errors_report.append(
             lambda x: x['loglevel'] == 'ERROR')
 
